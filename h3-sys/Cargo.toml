@@ -1,0 +1,18 @@
+[package]
+name = "h3-sys"
+version = "0.1.0"
+authors = ["Bhaskar Mookerji <mookerji@gmail.com>"]
+license = "MIT"
+description = "Low-level bindings to h3"
+repository = "https://github.com/mookerji/h3-rs"
+homepage = "https://github.com/mookerji/h3-rs"
+keywords = ["bindings", "ffi", "external-ffi-bindings"]
+edition = "2018"
+readme = "../README.md"
+build = "build/main.rs"
+
+[build-dependencies]
+metadeps = "1.1"
+
+[package.metadata.pkg-config]
+h3 = "3.5.0"

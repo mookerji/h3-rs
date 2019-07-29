@@ -1,0 +1,34 @@
+[package]
+name = "h3-rs"
+version = "0.1.0"
+authors = ["Bhaskar Mookerji <mookerji@gmail.com>"]
+license = "MIT"
+description = "Bindings to H3, Uber's Hexagonal hierarchical geospatial indexing system"
+repository = "https://github.com/mookerji/h3-rs"
+homepage = "https://github.com/mookerji/h3-rs"
+keywords = ["bindings", "ffi"]
+edition = "2018"
+readme = "README.md"
+
+[dependencies]
+h3-sys = { version = "0.1.0", path = "./h3-sys" }
+
+[[example]]
+name = "h3_compact"
+path = "examples/compact.rs"
+
+[[example]]
+name = "h3_distance"
+path = "examples/distance.rs"
+
+[[example]]
+name = "h3_edge"
+path = "examples/edge.rs"
+
+[[example]]
+name = "index"
+path = "examples/index.rs"
+
+[[example]]
+name = "neighbors"
+path = "examples/neighbors.rs"
