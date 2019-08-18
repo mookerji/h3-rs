@@ -1,6 +1,6 @@
 [package]
 name = "h3-sys"
-version = "0.1.0"
+version = "3.6.0"
 authors = ["Bhaskar Mookerji <mookerji@gmail.com>"]
 license = "MIT"
 description = "Low-level bindings to h3"
@@ -15,4 +15,4 @@ build = "build/main.rs"
 metadeps = "1.1"
 
 [package.metadata.pkg-config]
-h3 = "3.5.0"
+h3 = "3.6.0"

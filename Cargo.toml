@@ -11,7 +11,11 @@ edition = "2018"
 readme = "README.md"
 
 [dependencies]
-h3-sys = { version = "0.1.0", path = "./h3-sys" }
+c_vec = "^1.0.0"
+enum-primitive-derive = "^0.1"
+geo-types = "0.4.3"
+h3-sys = { version = "3.5.0", path = "./h3-sys" }
+num-traits = "^0.1"
 
 [[example]]
 name = "h3_compact"

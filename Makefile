@@ -2,6 +2,10 @@
 build:
 	@cargo build
 
+.PHONY: docs
+docs:
+	@cargo doc
+
 #TODO(mookerji): move to standalone bash file.
 # See also:
 # unused option: --whitelist-function h3SetToMultiPolygon
@@ -13,6 +17,7 @@ gen:
 		--with-derive-default \
 		--no-layout-tests \
 		--no-doc-comments \
+		--blacklist-type '__darwin_size_t' \
 		--whitelist-type 'H3Index' \
 		--whitelist-type 'GeoCoord' \
 		--whitelist-type 'GeoBoundary' \
@@ -28,6 +33,7 @@ gen:
 		--whitelist-function 'h3ToGeo' \
 		--whitelist-function 'h3ToGeoBoundary' \
 		--whitelist-function 'kRing' \
+		--whitelist-function 'maxKringSize' \
 		--whitelist-function 'kRingDistances' \
 		--whitelist-function 'hexRing' \
 		--whitelist-function 'polyfill' \
@@ -48,12 +54,14 @@ gen:
 		--whitelist-function 'h3ToString' \
 		--whitelist-function 'h3IsValid' \
 		--whitelist-function 'h3ToParent' \
+		--whitelist-function 'maxH3ToChildrenSize' \
 		--whitelist-function 'h3ToChildren' \
 		--whitelist-function 'compact' \
 		--whitelist-function 'uncompact' \
 		--whitelist-function 'h3IsResClassIII' \
 		--whitelist-function 'h3IsPentagon' \
 		--whitelist-function 'h3GetFaces' \
+		--whitelist-function 'maxFaceCount' \
 		--whitelist-function 'h3IndexesAreNeighbors' \
 		--whitelist-function 'getH3UnidirectionalEdge' \
 		--whitelist-function 'h3UnidirectionalEdgeIsValid' \
