@@ -216,13 +216,13 @@ impl H3Index {
 
     /// Returns the maximum number of icosahedron faces the given H3 index may
     /// intersect.
-    fn get_max_face_count(&self) -> i32 {
-        unsafe { h3_sys::maxFaceCount(self.0) }
+    fn get_max_face_count(&self) -> usize {
+        unsafe { h3_sys::maxFaceCount(self.0) as usize}
     }
 
     /// Return vector of all icosahedron faces intersected by a given H3
     pub fn get_icosahedron_faces(&self) -> Vec<i32> {
-        let num_faces = self.get_max_face_count() as usize;
+        let num_faces = self.get_max_face_count();
         let mut buf = Vec::<i32>::with_capacity(num_faces);
         let ptr = buf.as_mut_ptr();
         unsafe {
@@ -256,13 +256,13 @@ impl H3Index {
 
     /// Returns the maximum number of children (or grandchildren, etc) that
     /// could be for a given H3Index
-    pub fn get_max_children(&self, child_res: GridResolution) -> i32 {
-        unsafe { h3_sys::maxH3ToChildrenSize(self.0, child_res as i32) }
+    pub fn get_max_children(&self, child_res: GridResolution) -> usize {
+        unsafe { h3_sys::maxH3ToChildrenSize(self.0, child_res as i32) as usize }
     }
 
     /// Returns the children for a given H3Index
     pub fn get_children(&self, child_res: GridResolution) -> Vec<H3Index> {
-        let num_children = self.get_max_children(child_res) as usize;
+        let num_children = self.get_max_children(child_res);
         let mut buf = Vec::<H3Index>::with_capacity(num_children);
         let ptr = buf.as_mut_ptr();
         unsafe {
@@ -470,4 +470,14 @@ mod tests {
         let line: LineString<f64> = index.into();
         assert_eq!(line.num_coords(), 6);
     }
+
+    #[test]
+    fn test_index_children() {
+        let index = H3Index(0x87283472bffffff);
+        let z7_children = index.get_children(GridResolution::Z7);
+        assert_eq!(z7_children.len(), 1);
+        let z8_children = index.get_children(GridResolution::Z8);
+        assert_eq!(z8_children.len(), 7);
+    }
+
 }
