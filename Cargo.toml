@@ -16,3 +16,6 @@ enum-primitive-derive = "^0.1"
 geo-types = "0.4.3"
 h3-sys = { version = "3.5.0", path = "./h3-sys" }
 num-traits = "^0.1"
+
+[dev-dependencies]
+approx = "^0.3.2"
