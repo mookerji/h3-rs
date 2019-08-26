@@ -217,7 +217,7 @@ impl H3Index {
     /// Returns the maximum number of icosahedron faces the given H3 index may
     /// intersect.
     fn get_max_face_count(&self) -> usize {
-        unsafe { h3_sys::maxFaceCount(self.0) as usize}
+        unsafe { h3_sys::maxFaceCount(self.0) as usize }
     }
 
     /// Return vector of all icosahedron faces intersected by a given H3
