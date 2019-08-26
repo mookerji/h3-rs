@@ -16,23 +16,3 @@ enum-primitive-derive = "^0.1"
 geo-types = "0.4.3"
 h3-sys = { version = "3.5.0", path = "./h3-sys" }
 num-traits = "^0.1"
-
-[[example]]
-name = "h3_compact"
-path = "examples/compact.rs"
-
-[[example]]
-name = "h3_distance"
-path = "examples/distance.rs"
-
-[[example]]
-name = "h3_edge"
-path = "examples/edge.rs"
-
-[[example]]
-name = "index"
-path = "examples/index.rs"
-
-[[example]]
-name = "neighbors"
-path = "examples/neighbors.rs"
