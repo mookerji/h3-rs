@@ -142,18 +142,18 @@ pub enum GridResolution {
 
 impl GridResolution {
     /// Average hexagon edge length in meters at the given resolution.
-    pub fn edge_length(&self) -> f64 {
-        unsafe { h3_sys::edgeLengthM(*self as i32) }
+    pub fn edge_length(self) -> f64 {
+        unsafe { h3_sys::edgeLengthM(self as i32) }
     }
 
     /// Average hexagon area in square meters at the given resolution.
-    pub fn hex_area(&self) -> f64 {
-        unsafe { h3_sys::hexAreaM2(*self as i32) }
+    pub fn hex_area(self) -> f64 {
+        unsafe { h3_sys::hexAreaM2(self as i32) }
     }
 
     /// Number of unique H3 indexes at the given resolution.
-    pub fn num_hexagons(&self) -> i64 {
-        unsafe { h3_sys::numHexagons(*self as i32) }
+    pub fn num_hexagons(self) -> i64 {
+        unsafe { h3_sys::numHexagons(self as i32) }
     }
 }
 
@@ -431,9 +431,9 @@ mod tests {
 
     #[test]
     fn test_grid_resolution() {
-        assert_eq!(GridResolution::Z1.edge_length(), 418676.0055);
+        assert_relative_eq!(GridResolution::Z1.edge_length(), 418676.0055);
         assert_eq!(GridResolution::Z1.num_hexagons(), 842);
-        assert_eq!(GridResolution::Z1.hex_area(), 607221000000.0);
+        assert_relative_eq!(GridResolution::Z1.hex_area(), 607221000000.0);
     }
 
     // Sanity check around round tripping points.
