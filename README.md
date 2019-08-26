@@ -7,7 +7,7 @@ This is **experimental, in-progress software**.
 
 ## Installation
 
-`h3-rs` is available on [crates.io]():
+`h3-rs` is ~available on [crates.io][crates_h3_rs)~:
 
 ```
 [dependencies]
@@ -27,3 +27,4 @@ Distributed under the Apache License 2.0
 
 [h3_uber]: https://uber.github.io/h3/#/
 [h3_install]: https://github.com/uber/h3#installing
+[crates_h3_rs]: https://github.com/mookerji/h3-rs
