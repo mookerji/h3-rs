@@ -15,6 +15,10 @@ jobs:
             cmake .
             make
             sudo make install
+      - persist_to_workspace:
+          root: /usr/local/lib
+          paths:
+            - libh3.*
 
   build-test-lib:
     docker:
@@ -24,6 +28,8 @@ jobs:
       - run:
           name: Version information
           command: rustc --version; cargo --version; rustup --version
+      - attach_workspace:
+          at: /usr/local/lib
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
