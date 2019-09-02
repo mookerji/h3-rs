@@ -15,8 +15,8 @@
 
 //! Conversions H3 indexes to and from polygonal regions
 
-use crate::aliases::*;
 use crate::index::*;
+use crate::raw::*;
 use crate::resolution::*;
 
 use geo_types::{LineString, Polygon};

@@ -18,8 +18,8 @@
 //! This module defines the H3 index, as well as functions defining coordinate
 //! conversions and boundaries.
 
-use crate::aliases::*;
 use crate::errors::*;
+use crate::raw::*;
 use crate::resolution::*;
 use crate::types::*;
 
@@ -96,17 +96,6 @@ mod tests {
         assert!(Point::new(0., std::f64::NAN)
             .to_h3_index(GridResolution::Z0)
             .is_err());
-    }
-
-    /// Sanity check around round tripping points between h3-rs FFI and Rust
-    /// geotypes.
-    #[test]
-    fn test_round_trip() {
-        let orig = Point::new(-122.0553238, 37.3615593);
-        let c: GeoCoord = orig.into();
-        let new: Point<f64> = c.into();
-        assert_relative_eq!(orig.lat(), new.lat());
-        assert_relative_eq!(orig.lng(), new.lng());
     }
 
     #[test]

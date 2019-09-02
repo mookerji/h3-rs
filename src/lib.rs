@@ -39,11 +39,11 @@ pub use crate::resolution::*;
 pub use crate::traversal::*;
 pub use crate::types::*;
 
-mod aliases;
 pub mod errors;
 pub mod hierarchy;
 pub mod index;
 pub mod inspection;
+mod raw;
 pub mod region;
 pub mod resolution;
 pub mod traversal;
