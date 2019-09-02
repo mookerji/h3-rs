@@ -13,6 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! H3 inspection
+//!
+//! Functions for retrieving metadata about an H3 index, such as its resolution
+//! or base cell, and provide utilities for converting into and out of the
+//! 64-bit representation of an H3 index.
+
 use crate::errors::*;
 use crate::resolution::*;
 use crate::types::*;

@@ -13,14 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! H3 indexing and inspection
+//! H3 indexing
 //!
-//! This module defines the H3 index, as well as functions defining:
-//! - H3 index containing coordinates, and for finding the center and boundary
-//!   of H3 indexes.
-//! - Metadata about an H3 index, such as its resolution or base cell, and
-//!   provide utilities for converting into and out of the 64-bit representation
-//!   of an H3 index.
+//! This module defines the H3 index, as well as functions defining coordinate
+//! conversions and boundaries.
 
 use crate::aliases::*;
 use crate::errors::*;
