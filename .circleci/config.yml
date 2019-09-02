@@ -10,14 +10,14 @@ jobs:
           name: Version information
           command: rustc --version; cargo --version; rustup --version
       - run:
-          name:
-            Install H3 C library
+          name: Install H3 C library via git
           command: |
             sudo apt-get install cmake make gcc libtool git
             git clone https://github.com/uber/h3
             cd h3/
+            git checkout tags/v3.6.0
             cmake .
-            make
+            make -j4
             sudo make install
       - run:
           name: Build all targets
