@@ -1,0 +1,40 @@
+# https://gist.github.com/zargony/de209b1a790c3cb2176c86405a51b33c
+version: 2.1
+jobs:
+  install-h3-lib:
+    docker:
+      - image: circleci/rust:1.37.0-buster
+    steps:
+      - run:
+          name:
+            Install H3 C library
+          command: |
+            sudo apt-get install cmake make gcc libtool git
+            git clone https://github.com/uber/h3
+            cd h3/
+            cmake .
+            make
+            sudo make install
+
+  build-test-lib:
+    docker:
+      - image: circleci/rust:1.37.0-buster
+    steps:
+      - checkout
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
+      - run:
+          name: Build all targets
+          command: cargo build --all --all-targets
+      - run:
+          name: Run all tests
+          command: cargo test --all
+
+workflows:
+  test:
+    jobs:
+      - install-h3-lib
+      - build-test-lib:
+          requires:
+            - install-h3-lib
