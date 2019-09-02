@@ -7,11 +7,19 @@ This is **experimental, in-progress software**.
 
 ## Installation
 
-`h3-rs` is ~available on [crates.io][crates_h3_rs)~:
+`h3-rs` is ~available on [crates.io][crates_h3_rs]~ available for installation
+from source. First, checkout this repo:
+
+```bash
+$ git clone git@github.com:mookerji/h3-rs.git
+```
+
+If the repo for your downstream project is in the same directory, add to your
+`Cargo.toml`:
 
 ```
 [dependencies]
-h3 = "0.1.0"
+h3 = { version = "3.5.0", path = "../h3-rs" }
 ```
 
 `h3-rs` requires that you already have `h3` and its headers installed on your
