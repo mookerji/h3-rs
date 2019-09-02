@@ -46,7 +46,7 @@ struct GeoPolygon(h3_sys::GeoPolygon);
 struct GeoMultiPolygon(h3_sys::GeoMultiPolygon);
 
 /// A unique hierarchical index for an H3 cell
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct H3Index(pub h3_sys::H3Index);
 
 /// `h3-rs`-specific errors
@@ -89,6 +89,14 @@ trait ToH3Index {
     /// Indexes the location at the specified resolution, returning the index of
     /// the cell containing the location.
     fn to_h3_index(&self, res: GridResolution) -> Result<H3Index>;
+}
+
+trait ToH3Region {
+    /// Returns H3Index's covering the given region.
+    fn polyfill_h3_index(&self, res: GridResolution) -> Vec<H3Index>;
+
+    /// Maximum number of hexagons in the given region.
+    fn get_h3_polyfill_size(&self, res: GridResolution) -> usize;
 }
 
 /// ## H3 Grid Resolution
@@ -139,6 +147,8 @@ pub enum GridResolution {
     Z14 = 14,
     Z15 = 15,
 }
+
+pub const MAX_GRID_RESOLUTION: i32 = GridResolution::Z15 as i32;
 
 impl GridResolution {
     /// Average hexagon edge length in meters at the given resolution.
@@ -245,8 +255,55 @@ impl H3Index {
         unsafe {
             std::mem::forget(buf);
             h3_sys::kRing(self.0, k, ptr as *mut h3_sys::H3Index);
+            // TODO(mookerji): figure out how to deal with .clone() / borrowed
+            // content here.
             Vec::from_raw_parts(ptr, k_ring_size, k_ring_size)
+                .iter()
+                .filter_map(|i| {
+                    if *i != H3Index(0) {
+                        Some(i.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         }
+    }
+
+    /// Get H3 indices (or 'k-ring') within distance k of the given
+    /// index, reporting distance from the origin.
+    pub fn get_k_ring_distances(&self, k: i32) -> Vec<Vec<H3Index>> {
+        // Get the maximum number of indices that result from the kRing
+        // algorithm with the given k.
+        let k_ring_size = unsafe { h3_sys::maxKringSize(k) } as usize;
+        // TODO(mookerji): Verify that this coercion below is safe with H3Index.
+        let mut h3_buf = Vec::<H3Index>::with_capacity(k_ring_size);
+        let h3_ptr = h3_buf.as_mut_ptr();
+        let mut distance_buf = Vec::<i32>::with_capacity(k_ring_size);
+        let distance_ptr = distance_buf.as_mut_ptr();
+        let (indices, distances) = unsafe {
+            std::mem::forget(h3_buf);
+            std::mem::forget(distance_buf);
+            h3_sys::kRingDistances(
+                self.0,
+                k,
+                h3_ptr as *mut h3_sys::H3Index,
+                distance_ptr as *mut i32,
+            );
+            (
+                Vec::from_raw_parts(h3_ptr, k_ring_size, k_ring_size),
+                Vec::from_raw_parts(distance_ptr, k_ring_size, k_ring_size),
+            )
+        };
+        let distance_size = *distances.iter().max().unwrap() as usize + 1;
+        let mut result = vec![Vec::new(); distance_size];
+        for i in 0..k_ring_size {
+            if indices[i] == H3Index(0) {
+                continue;
+            }
+            result[distances[i] as usize].push(indices[i].clone());
+        }
+        result
     }
 
     /// Returns the parent (or grandparent, etc) hexagon of the given hexagon
@@ -382,6 +439,29 @@ impl From<GeoFence> for LineString<f64> {
     }
 }
 
+impl From<LineString<f64>> for GeoFence {
+    fn from(c: LineString<f64>) -> GeoFence {
+        let num_verts = c.num_coords() as i32;
+        // YUCK
+        let mut v: Vec<h3_sys::GeoCoord> = c
+            .into_points()
+            .iter()
+            .map(|&c| -> h3_sys::GeoCoord {
+                let f: GeoCoord = c.into();
+                f.0
+            })
+            .collect();
+        let ptr = v.as_mut_ptr();
+        unsafe {
+            std::mem::forget(v);
+            GeoFence(h3_sys::Geofence {
+                numVerts: num_verts,
+                verts: ptr,
+            })
+        }
+    }
+}
+
 impl From<GeoBoundary> for LineString<f64> {
     fn from(c: GeoBoundary) -> LineString<f64> {
         let num_vertices = c.0.numVerts as usize;
@@ -403,9 +483,25 @@ impl From<GeoPolygon> for Polygon<f64> {
             GeoFence(p.0.geofence).into(),
             holes
                 .iter()
-                .map(|h| -> LineString<f64> { GeoFence(*h).into() })
+                .map(|&h| -> LineString<f64> { GeoFence(h).into() })
                 .collect(),
         )
+    }
+}
+impl From<Polygon<f64>> for GeoPolygon {
+    fn from(p: Polygon<f64>) -> GeoPolygon {
+        let (exterior, interiors) = p.into_inner();
+        let geofence: GeoFence = exterior.into();
+        let num_holes = interiors.len() as i32;
+        let mut holes: Vec<GeoFence> = interiors
+            .into_iter()
+            .map(|g| -> GeoFence { g.into() })
+            .collect();
+        GeoPolygon(h3_sys::GeoPolygon {
+            geofence: geofence.0,
+            numHoles: num_holes,
+            holes: holes.as_mut_ptr() as *mut h3_sys::Geofence,
+        })
     }
 }
 
@@ -421,6 +517,25 @@ impl From<GeoMultiPolygon> for MultiPolygon<f64> {
     }
 }
 
+impl ToH3Region for Polygon<f64> {
+    fn polyfill_h3_index(&self, res: GridResolution) -> Vec<H3Index> {
+        let polygon: GeoPolygon = self.clone().into();
+        let max_indices = self.get_h3_polyfill_size(res);
+        let mut buf = Vec::<H3Index>::with_capacity(max_indices);
+        let ptr = buf.as_mut_ptr();
+        unsafe {
+            std::mem::forget(buf);
+            h3_sys::polyfill(&polygon.0, res as i32, ptr as *mut h3_sys::H3Index);
+            Vec::from_raw_parts(ptr, max_indices, max_indices)
+        }
+    }
+
+    fn get_h3_polyfill_size(&self, res: GridResolution) -> usize {
+        let polygon: GeoPolygon = self.clone().into();
+        unsafe { h3_sys::maxPolyfillSize(&polygon.0, res as i32) as usize }
+    }
+}
+
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
@@ -428,6 +543,7 @@ extern crate approx;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_types::{line_string, polygon};
 
     #[test]
     fn test_grid_resolution() {
@@ -436,7 +552,8 @@ mod tests {
         assert_relative_eq!(GridResolution::Z1.hex_area(), 607221000000.0);
     }
 
-    // Sanity check around round tripping points.
+    /// Sanity check around round tripping points between h3-rs FFI and Rust
+    /// geotypes.
     #[test]
     fn test_round_trip() {
         let orig = Point::new(-122.0553238, 37.3615593);
@@ -446,29 +563,290 @@ mod tests {
         assert_relative_eq!(orig.lng(), new.lng());
     }
 
+    // Many of the tests below are ported verbatim from the Python and
+    // javascript unit tests found here:
+    // - https://github.com/uber/h3-py/blob/master/tests/test_h3.py
+    // - https://github.com/uber/h3-js/blob/master/test/h3core.spec.js
+
     #[test]
-    fn test_point_to_index() {
+    fn test_h3_is_valid() {
+        // H3 Address is considered an address
         assert_eq!(
-            Point::new(-122.0553238, 37.3615593).to_h3_index(GridResolution::Z7),
-            Ok(H3Index(0x87283472bffffff))
+            H3Index::new(0x85283473fffffff),
+            Ok(H3Index(0x85283473fffffff))
         );
+        assert!(H3Index(0x85283473fffffff).is_valid());
+        // H3 Address from Java test also valid
+        assert!(H3Index(0x850dab63fffffff).is_valid());
+        // H3 0.x Addresses are not considered valid
+        assert!(!H3Index(0x5004295803a88).is_valid());
+        assert_eq!(
+            H3Index::new(0x5004295803a88),
+            Err(Error::InvalidIndexArgument(0x5004295803a88))
+        );
+        // H3 Address is considered an address
+        for i in 0..MAX_GRID_RESOLUTION + 1 {
+            let res = GridResolution::from_i32(i).expect("GridResolution failed!");
+            assert!(Point::new(-122., 37.).to_h3_index(res).is_ok());
+        }
+        // Added!
         assert!(Point::new(std::f64::NAN, 0.)
+            .to_h3_index(GridResolution::Z0)
+            .is_err());
+        assert!(Point::new(0., std::f64::NAN)
             .to_h3_index(GridResolution::Z0)
             .is_err());
     }
 
-    // #[test]
-    // fn test_index_to_point() {
-    //     let p: Point<f64> = H3Index(0x87283472bffffff).into();
-    //     assert_relative_eq!(p.lng(), -122.0553238, epsilon = 1.0e-5);
-    //     assert_relative_eq!(p.lat(), 37.3615593, epsilon = 1.0e-5);
-    // }
+    #[test]
+    fn test_geo_to_h3() {
+        // geo_to_h3: Got the expected H3 address back
+        assert_eq!(
+            Point::new(-122.0553238, 37.3615593).to_h3_index(GridResolution::Z5),
+            Ok(H3Index(0x85283473fffffff))
+        );
+    }
 
     #[test]
-    fn test_index_to_boundary() {
-        let index = H3Index(0x87283472bffffff);
-        let line: LineString<f64> = index.into();
-        assert_eq!(line.num_coords(), 6);
+    fn test_h3_get_resolution() {
+        for i in 0..MAX_GRID_RESOLUTION + 1 {
+            let res = GridResolution::from_i32(i).expect("GridResolution failed!");
+            let index = Point::new(-122.0553238, 37.3615593)
+                .to_h3_index(res)
+                .unwrap();
+            // Got the expected H3 resolution back!
+            assert_eq!(
+                index.get_resolution().expect("Point.to_h3_index failed"),
+                res
+            );
+        }
+    }
+
+    #[test]
+    fn test_silly_geo_to_h3() {
+        // world-wrapping lat, lng corrected
+        use std::f64::consts::PI;
+        let full_rot = 2. * PI.to_degrees();
+        let res = GridResolution::Z5;
+        let index = Ok(H3Index(0x85283473fffffff));
+        let lng = -122.0553238;
+        let lat = 37.3615593;
+        assert_eq!(Point::new(lng + full_rot, lat).to_h3_index(res), index);
+        assert_eq!(Point::new(lng, lat + full_rot).to_h3_index(res), index);
+        assert_eq!(
+            Point::new(lng + full_rot, lat + full_rot).to_h3_index(res),
+            index
+        );
+    }
+
+    fn assert_approx_point(expected: Point<f64>, actual: Point<f64>, eps: f64) {
+        assert_relative_eq!(actual.lat(), expected.lat(), epsilon = eps);
+        assert_relative_eq!(actual.lng(), expected.lng(), epsilon = eps);
+    }
+
+    #[test]
+    fn test_h3_to_geo() {
+        let index = H3Index::new(0x85283473fffffff).unwrap();
+        assert_eq!(
+            index.get_resolution().expect("GridResolution failed!"),
+            GridResolution::Z5
+        );
+        assert_approx_point(
+            index.into(),
+            Point::new(-121.97637597255124, 37.34579337536848),
+            1.0e-9,
+        );
+    }
+
+    #[test]
+    fn test_h3_to_geo_boundary() {
+        let expected = line_string![
+            (x: -121.91508032705622, y: 37.271355866731895),
+            (x: -121.86222328902491, y: 37.353926450852256),
+            (x: -121.9235499963016, y: 37.42834118609435),
+            (x: -122.0377349642703, y: 37.42012867767778),
+            (x: -122.09042892904395, y: 37.33755608435298),
+            (x: -122.02910130919, y: 37.26319797461824)
+        ];
+        let actual: LineString<f64> = H3Index(0x85283473fffffff).into();
+        assert_eq!(actual.num_coords(), expected.num_coords());
+        let actual_vec = actual.into_points();
+        let expected_vec = expected.into_points();
+        for i in 0..actual_vec.len() {
+            assert_approx_point(actual_vec[i], expected_vec[i], 1.0e-9);
+        }
+    }
+
+    #[test]
+    fn test_k_ring() {
+        let k_ring = H3Index(0x8928308280fffff).get_k_ring_indices(1);
+        // Check the expected number of hexagons for a single ring
+        assert_eq!(k_ring.len(), 1 + 6);
+        let expected_hexagons = vec![
+            H3Index(0x8928308280fffff),
+            H3Index(0x8928308280bffff),
+            H3Index(0x89283082807ffff),
+            H3Index(0x89283082877ffff),
+            H3Index(0x89283082803ffff),
+            H3Index(0x89283082873ffff),
+            H3Index(0x8928308283bffff),
+        ];
+        // Expected hexagons are present in k-ring
+        for hex in expected_hexagons {
+            assert!(k_ring.contains(&hex));
+        }
+    }
+
+    #[test]
+    fn test_k_ring2() {
+        let k_ring = H3Index(0x8928308280fffff).get_k_ring_indices(2);
+        // Check the expected number of hexagons for two rings
+        assert_eq!(k_ring.len(), 1 + 6 + 12);
+        let expected_hexagons = vec![
+            H3Index(0x89283082813ffff),
+            H3Index(0x89283082817ffff),
+            H3Index(0x8928308281bffff),
+            H3Index(0x89283082863ffff),
+            H3Index(0x89283082823ffff),
+            H3Index(0x89283082873ffff),
+            H3Index(0x89283082877ffff),
+            H3Index(0x8928308287bffff),
+            H3Index(0x89283082833ffff),
+            H3Index(0x8928308282bffff),
+            H3Index(0x8928308283bffff),
+            H3Index(0x89283082857ffff),
+            H3Index(0x892830828abffff),
+            H3Index(0x89283082847ffff),
+            H3Index(0x89283082867ffff),
+            H3Index(0x89283082803ffff),
+            H3Index(0x89283082807ffff),
+            H3Index(0x8928308280bffff),
+            H3Index(0x8928308280fffff),
+        ];
+        // Expected hexagons are present in k-ring
+        for hex in expected_hexagons {
+            assert!(k_ring.contains(&hex));
+        }
+    }
+
+    #[test]
+    fn test_k_ring_pentagon() {
+        let k_ring = H3Index(0x821c07fffffffff).get_k_ring_indices(1);
+        // Check the expected number for a single ring around a pentagon
+        assert_eq!(k_ring.len(), 1 + 5);
+        let expected_hexagons = vec![
+            H3Index(0x821c2ffffffffff),
+            H3Index(0x821c27fffffffff),
+            H3Index(0x821c07fffffffff),
+            H3Index(0x821c17fffffffff),
+            H3Index(0x821c1ffffffffff),
+            H3Index(0x821c37fffffffff),
+        ];
+        // Expected hexagons are present in k-ring
+        for hex in expected_hexagons {
+            assert!(k_ring.contains(&hex));
+        }
+    }
+
+    #[test]
+    fn test_k_ring_distances() {
+        let k_ring = H3Index(0x8928308280fffff).get_k_ring_distances(1);
+        assert_eq!(k_ring.len(), 2);
+        assert_eq!(k_ring[0].len(), 1);
+        assert_eq!(k_ring[1].len(), 6);
+        assert_eq!(k_ring[0], vec![H3Index(0x8928308280fffff)]);
+        let expected_hexagons = vec![
+            H3Index(0x8928308280bffff),
+            H3Index(0x89283082807ffff),
+            H3Index(0x89283082877ffff),
+            H3Index(0x89283082803ffff),
+            H3Index(0x89283082873ffff),
+            H3Index(0x8928308283bffff),
+        ];
+        for hex in expected_hexagons {
+            assert!(k_ring[1].contains(&hex));
+        }
+
+        let k_ring2 = H3Index(0x870800003ffffff).get_k_ring_distances(2);
+        assert_eq!(k_ring2.len(), 3);
+        assert_eq!(k_ring2[0].len(), 1);
+        assert_eq!(k_ring2[1].len(), 6);
+        assert_eq!(k_ring2[2].len(), 11);
+    }
+
+    #[test]
+    fn test_polyfill() {
+        let poly = polygon![
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478),
+                (x: -122.5123436999983966, y: 37.7076131999975672),
+                (x: -122.5247187000021967, y: 37.7835871999971715),
+                (x: -122.4798767000009008, y: 37.8151571999998453),
+            ],
+            interiors: [[]],
+        ];
+        let res = GridResolution::Z9;
+        let indices = poly.polyfill_h3_index(res);
+        let max_indices = poly.get_h3_polyfill_size(res);
+        assert_eq!(indices.len(), max_indices);
+    }
+
+    #[test]
+    fn test_polyfill_with_hole() {
+        let poly = polygon!(
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478),
+                (x: -122.5123436999983966, y: 37.7076131999975672),
+                (x: -122.5247187000021967, y: 37.7835871999971715),
+                (x: -122.4798767000009008, y: 37.8151571999998453),
+            ],
+            interiors: [
+                [
+                    (x: -122.4471197, y: 37.7869802),
+                    (x: -122.4590777, y: 37.7664102),
+                    (x: -122.4137097, y: 37.7710682)
+                ],
+            ],
+        );
+        let res = GridResolution::Z9;
+        let indices = poly.polyfill_h3_index(res);
+        let max_indices = poly.get_h3_polyfill_size(res);
+        assert_eq!(indices.len(), max_indices);
+    }
+
+    #[test]
+    fn test_polyfill_with_two_holes() {
+        let poly = polygon!(
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478),
+                (x: -122.5123436999983966, y: 37.7076131999975672),
+                (x: -122.5247187000021967, y: 37.7835871999971715),
+                (x: -122.4798767000009008, y: 37.8151571999998453),
+            ],
+            interiors: [
+                [
+                    (x: -122.4471197, y: 37.7869802),
+                    (x: -122.4590777, y: 37.7664102),
+                    (x: -122.4137097, y: 37.7710682)
+                ],
+                [
+                    (x: -122.490025, y: 37.747976),
+                    (x: -122.503758, y: 37.731550),
+                    (x: -122.452603, y: 37.725440)
+                ],
+            ],
+        );
+        // TODO: if holes are identical, test crashes?
+        let res = GridResolution::Z9;
+        let indices = poly.polyfill_h3_index(res);
+        let max_indices = poly.get_h3_polyfill_size(res);
+        assert_eq!(indices.len(), max_indices);
     }
 
     #[test]

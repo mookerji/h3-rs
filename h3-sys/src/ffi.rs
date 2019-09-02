@@ -120,6 +120,12 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn maxPolyfillSize(
+        geoPolygon: *const GeoPolygon,
+        res: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn polyfill(geoPolygon: *const GeoPolygon, res: ::std::os::raw::c_int, out: *mut H3Index);
 }
 extern "C" {

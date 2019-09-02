@@ -40,6 +40,7 @@ pub use crate::ffi::{
     maxKringSize,
     kRingDistances,
     numHexagons,
+    maxPolyfillSize,
     polyfill,
     radsToDegs,
     stringToH3,

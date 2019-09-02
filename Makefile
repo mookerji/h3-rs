@@ -36,6 +36,7 @@ gen:
 		--whitelist-function 'maxKringSize' \
 		--whitelist-function 'kRingDistances' \
 		--whitelist-function 'hexRing' \
+		--whitelist-function 'maxPolyfillSize' \
 		--whitelist-function 'polyfill' \
 		--whitelist-function 'h3SetToMultiPolygon' \
 		--whitelist-function 'degsToRads' \
