@@ -12,14 +12,15 @@ from source. First, checkout this repo:
 
 ```bash
 $ git clone git@github.com:mookerji/h3-rs.git
+$ git checkout tags/v0.1.0
 ```
 
-If the repo for your downstream project is in the same directory, add to your
-`Cargo.toml`:
+Assuming that your downstream project repo and `h3-rs` are in the same repo, add
+to your `Cargo.toml`:
 
 ```
 [dependencies]
-h3 = { version = "3.5.0", path = "../h3-rs" }
+h3-rs = { version = "0.1.0", path = "../h3-rs" }
 ```
 
 `h3-rs` requires that you already have `h3` and its headers installed on your
