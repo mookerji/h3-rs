@@ -1,10 +1,14 @@
 # https://gist.github.com/zargony/de209b1a790c3cb2176c86405a51b33c
 version: 2.1
 jobs:
-  install-h3-lib:
+  build-test-lib:
     docker:
       - image: circleci/rust:1.37.0-buster
     steps:
+      - checkout
+      - run:
+          name: Version information
+          command: rustc --version; cargo --version; rustup --version
       - run:
           name:
             Install H3 C library
@@ -15,21 +19,6 @@ jobs:
             cmake .
             make
             sudo make install
-      - persist_to_workspace:
-          root: /usr/local/lib
-          paths:
-            - libh3.*
-
-  build-test-lib:
-    docker:
-      - image: circleci/rust:1.37.0-buster
-    steps:
-      - checkout
-      - run:
-          name: Version information
-          command: rustc --version; cargo --version; rustup --version
-      - attach_workspace:
-          at: /usr/local/lib
       - run:
           name: Build all targets
           command: cargo build --all --all-targets
@@ -40,7 +29,4 @@ jobs:
 workflows:
   test:
     jobs:
-      - install-h3-lib
-      - build-test-lib:
-          requires:
-            - install-h3-lib
+      - build-test-lib
