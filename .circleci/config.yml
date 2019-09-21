@@ -8,11 +8,19 @@ jobs:
       - checkout
       - run:
           name: Version information
-          command: rustc --version; cargo --version; rustup --version
+          command: |
+            rustc --version; cargo --version; rustup --version
+      - run:
+          name: Install deps
+          command: |
+            sudo apt-get install cmake make gcc libtool git
+      - run:
+          name: Submodules
+          command: |
+            git submodule sync && git submodule update --init
       - run:
           name: Install H3 C library via git
           command: |
-            sudo apt-get install cmake make gcc libtool git
             pushd h3-sys/lib/h3/
             cmake .
             make -j4
