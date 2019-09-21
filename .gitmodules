@@ -1,0 +1,4 @@
+[submodule "h3-sys/lib/h3"]
+	path = h3-sys/lib/h3
+	url = https://github.com/uber/h3
+	ignore = dirty
