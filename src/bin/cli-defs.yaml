@@ -1,0 +1,34 @@
+name: h3util
+version: "0.1.0"
+author: Bhaskar Mookerji <mookerji@gmail.com>
+about: CLI interface to h3-rs
+args:
+- verbose:
+    short: v
+    multiple: true
+    help: Sets the level of verbosity
+subcommands:
+- index-to-boundary:
+    about: Get a GeoJSON FeatureCollection for one or more H3 indices.
+    args:
+    - debug:
+        short: d
+        help: print debug information
+- index-to-centroid:
+    about: Get the centroid of an H3Index
+    args:
+    - debug:
+        short: d
+        help: print debug information
+- point-to-index:
+    about: Get the H3Index containing the given point
+    args:
+    - debug:
+        short: d
+        help: print debug information
+- boundary-to-index:
+    about: Convert one or more GeoJSON features to H3 indices
+    args:
+    - debug:
+        short: d
+        help: print debug information
