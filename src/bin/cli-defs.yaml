@@ -9,26 +9,36 @@ args:
     help: Sets the level of verbosity
 subcommands:
 - index-to-boundary:
-    about: Get a GeoJSON FeatureCollection for one or more H3 indices.
+    about: |
+      Get a GeoJSON FeatureCollection for one or more H3 indices.
     args:
-    - debug:
-        short: d
-        help: print debug information
+    - INDEX:
+        required: true
+        multiple: true
+        help: H3 index
 - index-to-centroid:
-    about: Get the centroid of an H3Index
+    about: |
+      Get the centroid of an H3Index
     args:
-    - debug:
-        short: d
-        help: print debug information
+    - INDEX:
+        required: true
+        help: H3 index
 - point-to-index:
-    about: Get the H3Index containing the given point
+    about: |
+      Get the H3Index containing the given point
     args:
-    - debug:
-        short: d
-        help: print debug information
+    - lng:
+        long: lng
+        required: true
+        help: Longitude
+    - lat:
+        long: lat
+        required: true
+        help: Latitude
+    - res:
+        long: res
+        required: true
+        help: Resolution
 - boundary-to-index:
-    about: Convert one or more GeoJSON features to H3 indices
-    args:
-    - debug:
-        short: d
-        help: print debug information
+    about: |
+      Convert one or more GeoJSON features to H3 indices. Reads from stdout.
