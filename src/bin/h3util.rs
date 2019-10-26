@@ -105,6 +105,7 @@ impl Command {
     }
 }
 
+/// CLI handler for index-to-boundary
 fn index_to_boundary(indices: Vec<H3Index>) -> Result<()> {
     let mut boundaries = Vec::new();
     for i in 0..indices.len() {
@@ -126,12 +127,14 @@ fn index_to_boundary(indices: Vec<H3Index>) -> Result<()> {
     Ok(())
 }
 
+/// CLI handler for index-to-point
 fn index_to_point(index: H3Index) -> Result<()> {
     let point = Point::from(index);
     println!("{} {}", point.lng(), point.lat());
     Ok(())
 }
 
+/// CLI handler for point-to-index
 fn point_to_index(point: Point<f64>, res: GridResolution) -> Result<()> {
     match point.to_h3_index(res) {
         Ok(index) => println!("{}", index),
@@ -139,7 +142,7 @@ fn point_to_index(point: Point<f64>, res: GridResolution) -> Result<()> {
     }
     Ok(())
 }
-
+/// CLI handler for boundary-to-index
 fn boundary_to_index() -> Result<()> {
     Ok(())
 }
@@ -170,7 +173,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_main() {
+    fn test_command() {
+        assert!(false);
+    }
+
+    #[test]
+    fn test_index_to_boundary() {
+        assert!(false);
+    }
+
+    #[test]
+    fn test_index_to_point() {
+        assert!(false);
+    }
+
+    #[test]
+    fn test_point_to_index() {
         assert!(false);
     }
 }
