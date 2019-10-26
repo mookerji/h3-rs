@@ -22,11 +22,13 @@ extern crate h3_rs;
 
 use clap::{App, ArgMatches};
 use geo_types::{LineString, Point};
+use geojson::{Feature, FeatureCollection, Geometry, Value};
 use h3_rs::Error as H3Error;
-use h3_rs::{GridResolution, H3Index};
+use h3_rs::{GridResolution, H3Index, ToH3Index};
 use num_traits::FromPrimitive;
 use std::process;
 
+/// CLI Errors
 #[derive(Debug, PartialEq)]
 pub enum Error {
     LibraryError(H3Error),
@@ -44,6 +46,7 @@ impl std::fmt::Display for Error {
 
 type Result<T> = std::result::Result<T, Error>;
 
+/// CLI Commands
 #[derive(Clone, Debug, PartialEq)]
 enum Command {
     IndexToBoundary(Vec<H3Index>),
@@ -56,7 +59,7 @@ impl Command {
     fn from_args<'a>(matches: ArgMatches<'a>) -> Result<Command> {
         match matches.subcommand() {
             ("index-to-boundary", Some(sub_match)) => {
-                let indices = Vec::new();
+                let mut indices = Vec::new();
                 for entry in sub_match.value_of("INDEX").unwrap().split(" ") {
                     let val = (*entry).parse::<u64>().expect("Invalid argument!");
                     match H3Index::new(val) {
@@ -67,22 +70,34 @@ impl Command {
                 Ok(Command::IndexToBoundary(indices))
             }
             ("index-to-centroid", Some(sub_match)) => {
-                let arg = sub_match.value_of("INDEX").unwrap();
-                match H3Index::new(*arg.into()) {
+                let val = sub_match
+                    .value_of("INDEX")
+                    .unwrap()
+                    .parse::<u64>()
+                    .expect("Invalid argument!");
+                match H3Index::new(val) {
                     Ok(index) => Ok(Command::IndexToPoint(index)),
                     Err(err) => Err(Error::LibraryError(err)),
                 }
             }
             ("point-to-index", Some(sub_match)) => {
-                let lng = sub_match.value_of("lng").unwrap();
-                let lat = sub_match.value_of("lat").unwrap();
-                let res_val = sub_match.value_of("res").unwrap();
-                let res =
-                    GridResolution::from_i32(*res_val.into()).expect("GridResolution failed!");
-                Ok(Command::PointToIndex(
-                    Point::new(*lng.into(), *lat.into()),
-                    res,
-                ))
+                let lng = sub_match
+                    .value_of("lng")
+                    .unwrap()
+                    .parse::<f64>()
+                    .expect("Invalid argument!");;
+                let lat = sub_match
+                    .value_of("lat")
+                    .unwrap()
+                    .parse::<f64>()
+                    .expect("Invalid argument!");;
+                let res_val = sub_match
+                    .value_of("res")
+                    .unwrap()
+                    .parse::<i32>()
+                    .expect("Invalid argument!");
+                let res = GridResolution::from_i32(res_val).expect("GridResolution failed!");
+                Ok(Command::PointToIndex(Point::new(lng, lat), res))
             }
             ("boundary-to-index", Some(sub_match)) => Ok(Command::BoundaryToIndex()),
             _ => Err(Error::InvalidSubCommand),
@@ -91,10 +106,23 @@ impl Command {
 }
 
 fn index_to_boundary(indices: Vec<H3Index>) -> Result<()> {
+    let mut boundaries = Vec::new();
     for i in 0..indices.len() {
-        let region = LineString::from(indices[i]);
-        println!("{}", "foo");
+        let region: LineString<f64> = indices[i].clone().into();
+        let val = Value::from(&region);
+        boundaries.push(Feature {
+            bbox: None,
+            geometry: Some(Geometry::new(val)),
+            id: None,
+            properties: None,
+            foreign_members: None
+        });
     }
+    println!("{}", FeatureCollection {
+        bbox: None,
+        features: boundaries,
+        foreign_members: None,
+    }.to_string());
     Ok(())
 }
 
@@ -105,6 +133,10 @@ fn index_to_point(index: H3Index) -> Result<()> {
 }
 
 fn point_to_index(point: Point<f64>, res: GridResolution) -> Result<()> {
+    match point.to_h3_index(res) {
+        Ok(index) => println!("{}", index),
+        Err(err) => eprintln!("{}", err)
+    }
     Ok(())
 }
 
@@ -113,16 +145,19 @@ fn boundary_to_index() -> Result<()> {
 }
 
 fn try_main(matches: ArgMatches) -> Result<()> {
-    Ok(())
-    // Command::IndexToBoundary(Vec<H3Index>),
-    // Command::IndexToPoint(H3Index),
-    // Command::PointToIndex(Point<f64>, GridResolution),
-    // Ok(Command::BoundaryToIndex())
+    match Command::from_args(matches) {
+        Ok(cmd) => match cmd {
+            Command::IndexToBoundary(indices) => index_to_boundary(indices),
+            Command::IndexToPoint(index) => index_to_point(index),
+            Command::PointToIndex(point, res) => point_to_index(point, res),
+            Command::BoundaryToIndex() => boundary_to_index(),
+        },
+        Err(err) => Err(err)
+    }
 }
 
 fn main() {
     let yaml = load_yaml!("./cli-defs.yaml");
-    //if let Err(err) = App::from_yaml(yaml).get_matches_safe().and_then(try_main) {
     let matches = App::from_yaml(yaml).get_matches();
     if let Err(err) = try_main(matches) {
         eprintln!("{}", err);

@@ -17,7 +17,7 @@ geo-types = "0.4.3"
 h3-sys = { version = "3.5.0", path = "./h3-sys" }
 num-traits = "^0.1"
 clap = { version = "^2.33.0", features = ["yaml"] }
-geojson = "0.16.0"
+geojson = { version = "0.16.0", features = ["geo-types"] }
 
 [dev-dependencies]
 approx = "^0.3.2"
