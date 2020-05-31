@@ -76,6 +76,15 @@ impl From<H3Index> for Point<f64> {
     }
 }
 
+impl std::str::FromStr for H3Index {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let idx_val = s.parse::<u64>()?;
+        H3Index::new(idx_val)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

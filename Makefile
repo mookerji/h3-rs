@@ -6,6 +6,10 @@ build:
 docs:
 	@cargo doc
 
+.PHONY: formatn
+format:
+	@cargo fmt
+
 #TODO(mookerji): move to standalone bash file.
 # See also:
 # unused option: --whitelist-function h3SetToMultiPolygon

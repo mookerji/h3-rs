@@ -42,6 +42,11 @@
 //! [overview]: https://uber.github.io/h3/#/documentation/core-library/overview
 //! [res_table]: https://uber.github.io/h3/#/documentation/core-library/resolution-table
 
+use crate::errors::*;
+use crate::types::*;
+
+use num_traits::FromPrimitive;
+
 /// H3 Grid Resolution
 #[allow(unused_variables)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Primitive)]
@@ -81,6 +86,15 @@ impl GridResolution {
     /// Number of unique H3 indexes at the given resolution.
     pub fn num_hexagons(self) -> i64 {
         unsafe { h3_sys::numHexagons(self as i32) }
+    }
+}
+
+impl std::str::FromStr for GridResolution {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let res_val = s.parse::<i32>()?;
+        GridResolution::from_i32(res_val).ok_or(Error::InvalidResolutionArgument(res_val))
     }
 }
 

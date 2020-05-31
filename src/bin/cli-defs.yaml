@@ -1,0 +1,82 @@
+name: h3util
+version: "0.1.0"
+author: Bhaskar Mookerji <mookerji@gmail.com>
+about: CLI interface to h3-rs
+args:
+- verbose:
+    short: v
+    multiple: true
+    help: Sets the level of verbosity
+subcommands:
+- index-to-components:
+    about: |
+      TBD
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+- index-to-hex-range:
+    about: |
+      TBD
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+    - DISTANCE:
+        long: distance
+        required: true
+        help: H3 index
+- index-to-k-ring:
+    about: |
+      TBD
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+    - DISTANCE:
+        long: distance
+        required: true
+        help: H3 index
+- index-to-boundary:
+    about: |
+      Get a GeoJSON FeatureCollection for an H3 index.
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+- index-to-centroid:
+    about: |
+      Get the centroid of an H3Index
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+- point-to-index:
+    about: |
+      Get the H3Index containing the given point
+    args:
+    - lng:
+        long: longitude
+        required: true
+        takes_value: true
+        allow_hyphen_values: true
+        help: Longitude
+    - lat:
+        long: latitude
+        required: true
+        takes_value: true
+        help: Latitude
+    - res:
+        long: resolution
+        required: true
+        takes_value: true
+        allow_hyphen_values: true
+        help: Resolution
+- boundary-to-index:
+    about: |
+      Convert one or more GeoJSON features to H3 indices. Reads from stdout.
