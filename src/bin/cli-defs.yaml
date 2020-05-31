@@ -8,19 +8,52 @@ args:
     multiple: true
     help: Sets the level of verbosity
 subcommands:
-- index-to-boundary:
+- index-to-components:
     about: |
-      Get a GeoJSON FeatureCollection for one or more H3 indices.
+      TBD
     args:
     - INDEX:
+        long: index
         required: true
-        multiple: true
+        help: H3 index
+- index-to-hex-range:
+    about: |
+      TBD
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+    - DISTANCE:
+        long: distance
+        required: true
+        help: H3 index
+- index-to-k-ring:
+    about: |
+      TBD
+    args:
+    - INDEX:
+        long: index
+        required: true
+        help: H3 index
+    - DISTANCE:
+        long: distance
+        required: true
+        help: H3 index
+- index-to-boundary:
+    about: |
+      Get a GeoJSON FeatureCollection for an H3 index.
+    args:
+    - INDEX:
+        long: index
+        required: true
         help: H3 index
 - index-to-centroid:
     about: |
       Get the centroid of an H3Index
     args:
     - INDEX:
+        long: index
         required: true
         help: H3 index
 - point-to-index:
@@ -28,18 +61,18 @@ subcommands:
       Get the H3Index containing the given point
     args:
     - lng:
-        long: lng
+        long: longitude
         required: true
         takes_value: true
         allow_hyphen_values: true
         help: Longitude
     - lat:
-        long: lat
+        long: latitude
         required: true
         takes_value: true
         help: Latitude
     - res:
-        long: res
+        long: resolution
         required: true
         takes_value: true
         allow_hyphen_values: true

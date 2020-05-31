@@ -32,6 +32,10 @@ pub enum Error {
     UnableToIndex(Point<f64>),
     /// Unable to serialize
     UnableToSerialize(H3Index),
+    /// Unable to parse string value to integer
+    ParseIntError(std::num::ParseIntError),
+    /// Invalid resolution argument
+    InvalidResolutionArgument(i32),
 }
 
 impl std::fmt::Display for Error {
@@ -47,7 +51,17 @@ impl std::fmt::Display for Error {
                 point.lng()
             ),
             Error::UnableToSerialize(index) => format!("Unable to serialize h3index={}", index),
+            Error::ParseIntError(error) => format!("Unable to parse integer. error={}", error),
+            Error::InvalidResolutionArgument(arg) => {
+                format!("Unable to parse integer to create resolution. arg={}", arg)
+            }
         };
         write!(f, "{ }", expression)
+    }
+}
+
+impl From<std::num::ParseIntError> for Error {
+    fn from(err: std::num::ParseIntError) -> Self {
+        Error::ParseIntError(err)
     }
 }
