@@ -82,18 +82,6 @@ enum Command {
     IndexToKRing(H3Index, u32),
 }
 
-// TODO:
-// Should these e in a library function?
-// read from stdout
-
-//.unwrap_or_else(|err| format!("{}", err))
-// let idx_val = value_t!(matched, "INDEX", u64).expect("Invalid argument!");
-
-// match value_t!(matched, "INDEX", H3Index) {
-//     Ok(index) => Ok(Command::IndexToPoint(index)),
-//     Err(err) => Err(Error::LibraryError(err)),
-// }
-
 impl Command {
     fn from_args<'a>(matches: ArgMatches<'a>) -> Result<Command> {
         match matches.subcommand() {
