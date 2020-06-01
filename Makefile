@@ -42,13 +42,10 @@ gen:
 		--whitelist-function 'hexRing' \
 		--whitelist-function 'maxPolyfillSize' \
 		--whitelist-function 'polyfill' \
-		--whitelist-function 'h3SetToMultiPolygon' \
 		--whitelist-function 'degsToRads' \
 		--whitelist-function 'radsToDegs' \
-		--whitelist-function 'hexArea' \
 		--whitelist-function 'hexAreaKm2' \
 		--whitelist-function 'hexAreaM2' \
-		--whitelist-function 'edgeLength' \
 		--whitelist-function 'edgeLengthKm' \
 		--whitelist-function 'edgeLengthM' \
 		--whitelist-function 'numHexagons' \
@@ -80,5 +77,4 @@ gen:
 		--whitelist-function 'experimentalH3ToLocalIj' \
 		--whitelist-function 'experimentalLocalIjToH3' \
 		h3-sys/interface.h \
-		-- -std=c11 \
-		> h3-sys/src/ffi.rs
+		-- -std=c11 -I/usr/local/include > h3-sys/src/ffi.rs
