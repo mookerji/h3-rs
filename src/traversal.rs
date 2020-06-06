@@ -87,15 +87,105 @@ impl H3Index {
     }
 
     /// Returns grid distance to another H3Index
-    pub fn distance_to(self, other: H3Index) -> Result<i32> {
+    pub fn distance_to(&self, other: H3Index) -> Result<i32> {
         unsafe {
             let distance = h3_sys::h3Distance(self.0, other.0);
             if distance < 0 {
-                Err(Error::IncompatibleIndices(self, other))
+                Err(Error::IncompatibleIndices(self.clone(), other))
             } else {
                 Ok(distance)
             }
         }
+    }
+
+    /// Return the line of indexes to another H3 index. Returns error if the
+    /// line cannot be computed.
+    pub fn line_to(&self, other: &H3Index) -> Result<Vec<H3Index>> {
+        let line_size = self.line_size(other)?;
+        let mut buf = Vec::<H3Index>::with_capacity(line_size);
+        let ptr = buf.as_mut_ptr();
+        unsafe {
+            std::mem::forget(buf);
+            h3_sys::h3Line(self.0, other.0, ptr as *mut h3_sys::H3Index);
+            Ok(Vec::from_raw_parts(ptr, line_size, line_size))
+        }
+    }
+
+    /// Number of indexes in a line from the this index to the end
+    /// index. Returns error if the line cannot be computed.
+    fn line_size(&self, other: &H3Index) -> Result<usize> {
+        let distance = unsafe { h3_sys::h3LineSize(self.0, other.0) };
+        if distance < 0 {
+            Err(Error::UnableToComputeH3Line(self.clone(), other.clone()))
+        } else {
+            Ok(distance as usize)
+        }
+    }
+
+    /// Produces the hollow hexagonal ring centered at origin with sides of length k.
+    pub fn hex_ring(&self, k: i32) -> Result<Vec<H3Index>> {
+        let hex_ring_size = unsafe { h3_sys::maxKringSize(k) } as usize;
+        let mut buf = Vec::<H3Index>::with_capacity(hex_ring_size);
+        let ptr = buf.as_mut_ptr();
+        unsafe {
+            std::mem::forget(buf);
+            let ret = h3_sys::hexRing(self.0, k, ptr as *mut h3_sys::H3Index);
+            if ret != 0 {
+                Err(Error::UnableToComputeTraversal(self.clone(), k))
+            } else {
+                Ok(Vec::from_raw_parts(ptr, hex_ring_size, hex_ring_size))
+            }
+        }
+    }
+
+    /// Hexagons neighbors in all directions, assuming no pentagons.
+    pub fn hex_range(&self, k: i32) -> Result<Vec<H3Index>> {
+        let hex_range_size = unsafe { h3_sys::maxKringSize(k) } as usize;
+        let mut buf = Vec::<H3Index>::with_capacity(hex_range_size);
+        let ptr = buf.as_mut_ptr();
+        unsafe {
+            std::mem::forget(buf);
+            let ret = h3_sys::hexRange(self.0, k, ptr as *mut h3_sys::H3Index);
+            if ret != 0 {
+                Err(Error::UnableToComputeTraversal(self.clone(), k))
+            } else {
+                Ok(Vec::from_raw_parts(ptr, hex_range_size, hex_range_size))
+            }
+        }
+    }
+
+    /// Prfoduces hexagon indexes within k distance of the origin index. Output
+    /// behavior is undefined when one of the indexes returned by this function
+    /// is a pentagon or is in the pentagon distortion area.
+    pub fn hex_range_distances(self, k: i32) -> Result<Vec<Vec<H3Index>>> {
+        let hex_range_size = unsafe { h3_sys::maxKringSize(k) } as usize;
+        let mut h3_buf = Vec::<H3Index>::with_capacity(hex_range_size);
+        let h3_ptr = h3_buf.as_mut_ptr();
+        let mut distance_buf = Vec::<i32>::with_capacity(hex_range_size);
+        let distance_ptr = distance_buf.as_mut_ptr();
+        let (indices, distances) = unsafe {
+            std::mem::forget(h3_buf);
+            std::mem::forget(distance_buf);
+            h3_sys::hexRangeDistances(
+                self.0,
+                k,
+                h3_ptr as *mut h3_sys::H3Index,
+                distance_ptr as *mut i32,
+            );
+            (
+                Vec::from_raw_parts(h3_ptr, hex_range_size, hex_range_size),
+                Vec::from_raw_parts(distance_ptr, hex_range_size, hex_range_size),
+            )
+        };
+        let distance_size = *distances.iter().max().unwrap() as usize + 1;
+        let mut result = vec![Vec::new(); distance_size];
+        for i in 0..hex_range_size {
+            if indices[i] == H3Index(0) {
+                continue;
+            }
+            result[distances[i] as usize].push(indices[i].clone());
+        }
+        Ok(result)
     }
 }
 

@@ -39,7 +39,12 @@ gen:
 		--whitelist-function 'kRing' \
 		--whitelist-function 'maxKringSize' \
 		--whitelist-function 'kRingDistances' \
+		--whitelist-function 'hexRange' \
+		--whitelist-function 'hexRangeDistances' \
+		--whitelist-function 'hexRanges' \
 		--whitelist-function 'hexRing' \
+		--whitelist-function 'h3SetToLinkedGeo' \
+		--whitelist-function 'destroyLinkedPolygon' \
 		--whitelist-function 'maxPolyfillSize' \
 		--whitelist-function 'polyfill' \
 		--whitelist-function 'degsToRads' \
@@ -74,6 +79,7 @@ gen:
 		--whitelist-function 'getH3UnidirectionalEdgeBoundary' \
 		--whitelist-function 'h3Distance' \
 		--whitelist-function 'h3Line' \
+		--whitelist-function 'h3LineSize' \
 		--whitelist-function 'experimentalH3ToLocalIj' \
 		--whitelist-function 'experimentalLocalIjToH3' \
 		h3-sys/interface.h \

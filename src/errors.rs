@@ -36,6 +36,11 @@ pub enum Error {
     ParseIntError(std::num::ParseIntError),
     /// Invalid resolution argument
     InvalidResolutionArgument(i32),
+    /// Unable to compute line between two H3 indices
+    UnableToComputeH3Line(H3Index, H3Index),
+    /// Unable to compute a traversal (hex range or hex ring) centered at H3
+    /// index.
+    UnableToComputeTraversal(H3Index, i32),
 }
 
 impl std::fmt::Display for Error {
@@ -54,6 +59,13 @@ impl std::fmt::Display for Error {
             Error::ParseIntError(error) => format!("Unable to parse integer. error={}", error),
             Error::InvalidResolutionArgument(arg) => {
                 format!("Unable to parse integer to create resolution. arg={}", arg)
+            }
+            Error::UnableToComputeH3Line(left, right) => format!(
+                "Unable to compute line between indices: left={} right={}",
+                left, right
+            ),
+            Error::UnableToComputeTraversal(index, k) => {
+                format!("Unable to compute traversal index={} k={}", index, k)
             }
         };
         write!(f, "{ }", expression)
