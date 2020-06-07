@@ -25,7 +25,7 @@ impl H3Index {
     /// Get H3 indices (or 'k-ring') within distance k of the given
     /// index. k-ring 0 is defined as the origin index, k-ring 1 is defined as
     /// k-ring 0 and all neighboring indices, and so on.
-    pub fn get_k_ring_indices(&self, k: i32) -> Vec<H3Index> {
+    pub fn k_ring_indices(&self, k: i32) -> Vec<H3Index> {
         // Get the maximum number of indices that result from the kRing
         // algorithm with the given k.
         let k_ring_size = unsafe { h3_sys::maxKringSize(k) } as usize;
@@ -52,7 +52,7 @@ impl H3Index {
 
     /// Get H3 indices (or 'k-ring') within distance k of the given
     /// index, reporting distance from the origin.
-    pub fn get_k_ring_distances(&self, k: i32) -> Vec<Vec<H3Index>> {
+    pub fn k_ring_distances(&self, k: i32) -> Vec<Vec<H3Index>> {
         // Get the maximum number of indices that result from the kRing
         // algorithm with the given k.
         let k_ring_size = unsafe { h3_sys::maxKringSize(k) } as usize;
@@ -129,11 +129,11 @@ impl H3Index {
         let ptr = buf.as_mut_ptr();
         unsafe {
             std::mem::forget(buf);
-            let ret = h3_sys::hexRing(self.0, k, ptr as *mut h3_sys::H3Index);
-            if ret != 0 {
-                Err(Error::UnableToComputeTraversal(self.clone(), k))
-            } else {
+            let err = h3_sys::hexRing(self.0, k, ptr as *mut h3_sys::H3Index);
+            if err == 0 {
                 Ok(Vec::from_raw_parts(ptr, hex_ring_size, hex_ring_size))
+            } else {
+                Err(Error::UnableToComputeTraversal(self.clone(), k))
             }
         }
     }
@@ -145,11 +145,11 @@ impl H3Index {
         let ptr = buf.as_mut_ptr();
         unsafe {
             std::mem::forget(buf);
-            let ret = h3_sys::hexRange(self.0, k, ptr as *mut h3_sys::H3Index);
-            if ret != 0 {
-                Err(Error::UnableToComputeTraversal(self.clone(), k))
-            } else {
+            let err = h3_sys::hexRange(self.0, k, ptr as *mut h3_sys::H3Index);
+            if err == 0 {
                 Ok(Vec::from_raw_parts(ptr, hex_range_size, hex_range_size))
+            } else {
+                Err(Error::UnableToComputeTraversal(self.clone(), k))
             }
         }
     }
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_k_ring() {
-        let k_ring = H3Index(0x8928308280fffff).get_k_ring_indices(1);
+        let k_ring = H3Index(0x8928308280fffff).k_ring_indices(1);
         // Check the expected number of hexagons for a single ring
         assert_eq!(k_ring.len(), 1 + 6);
         let expected_hexagons = vec![
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_k_ring2() {
-        let k_ring = H3Index(0x8928308280fffff).get_k_ring_indices(2);
+        let k_ring = H3Index(0x8928308280fffff).k_ring_indices(2);
         // Check the expected number of hexagons for two rings
         assert_eq!(k_ring.len(), 1 + 6 + 12);
         let expected_hexagons = vec![
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_k_ring_pentagon() {
-        let k_ring = H3Index(0x821c07fffffffff).get_k_ring_indices(1);
+        let k_ring = H3Index(0x821c07fffffffff).k_ring_indices(1);
         // Check the expected number for a single ring around a pentagon
         assert_eq!(k_ring.len(), 1 + 5);
         let expected_hexagons = vec![
@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_k_ring_distances() {
-        let k_ring = H3Index(0x8928308280fffff).get_k_ring_distances(1);
+        let k_ring = H3Index(0x8928308280fffff).k_ring_distances(1);
         assert_eq!(k_ring.len(), 2);
         assert_eq!(k_ring[0].len(), 1);
         assert_eq!(k_ring[1].len(), 6);
@@ -282,11 +282,48 @@ mod tests {
         for hex in expected_hexagons {
             assert!(k_ring[1].contains(&hex));
         }
-
-        let k_ring2 = H3Index(0x870800003ffffff).get_k_ring_distances(2);
+        let k_ring2 = H3Index(0x870800003ffffff).k_ring_distances(2);
         assert_eq!(k_ring2.len(), 3);
         assert_eq!(k_ring2[0].len(), 1);
         assert_eq!(k_ring2[1].len(), 6);
         assert_eq!(k_ring2[2].len(), 11);
+    }
+
+    #[test]
+    fn test_hex_ring() {
+        let k_ring = H3Index(0x8928308280fffff).hex_ring(1).unwrap();
+        let expected_hexagons = vec![
+            H3Index(0x8928308280bffff),
+            H3Index(0x89283082807ffff),
+            H3Index(0x89283082877ffff),
+            H3Index(0x89283082803ffff),
+            H3Index(0x89283082873ffff),
+            H3Index(0x8928308283bffff),
+        ];
+        for hex in expected_hexagons {
+            assert!(k_ring.contains(&hex));
+        }
+    }
+
+    #[test]
+    fn test_hex_ring2() {
+        let k_ring = H3Index(0x8928308280fffff).hex_ring(2).unwrap();
+        let expected_hexagons = vec![
+            H3Index(0x89283082813ffff),
+            H3Index(0x89283082817ffff),
+            H3Index(0x8928308281bffff),
+            H3Index(0x89283082863ffff),
+            H3Index(0x89283082823ffff),
+            H3Index(0x8928308287bffff),
+            H3Index(0x89283082833ffff),
+            H3Index(0x8928308282bffff),
+            H3Index(0x89283082857ffff),
+            H3Index(0x892830828abffff),
+            H3Index(0x89283082847ffff),
+            H3Index(0x89283082867ffff),
+        ];
+        for hex in expected_hexagons {
+            assert!(k_ring.contains(&hex));
+        }
     }
 }

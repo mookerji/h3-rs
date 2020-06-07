@@ -41,6 +41,8 @@ pub enum Error {
     /// Unable to compute a traversal (hex range or hex ring) centered at H3
     /// index.
     UnableToComputeTraversal(H3Index, i32),
+    /// Unable to compact (or uncompact) the given set of H3 indices
+    UnableToCompact(Vec<H3Index>),
 }
 
 impl std::fmt::Display for Error {
@@ -67,6 +69,7 @@ impl std::fmt::Display for Error {
             Error::UnableToComputeTraversal(index, k) => {
                 format!("Unable to compute traversal index={} k={}", index, k)
             }
+            Error::UnableToCompact(_) => format!("Unable to compact/uncompact set"),
         };
         write!(f, "{ }", expression)
     }

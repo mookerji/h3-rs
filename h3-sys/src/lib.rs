@@ -46,6 +46,7 @@ pub use crate::ffi::{
     maxH3ToChildrenSize,
     maxKringSize,
     maxPolyfillSize,
+    maxUncompactSize,
     numHexagons,
     polyfill,
     radsToDegs,

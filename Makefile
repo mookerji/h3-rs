@@ -65,6 +65,7 @@ gen:
 		--whitelist-function 'h3ToChildren' \
 		--whitelist-function 'compact' \
 		--whitelist-function 'uncompact' \
+		--whitelist-function 'maxUncompactSize' \
 		--whitelist-function 'h3IsResClassIII' \
 		--whitelist-function 'h3IsPentagon' \
 		--whitelist-function 'h3GetFaces' \

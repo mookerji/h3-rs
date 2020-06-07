@@ -220,6 +220,13 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn maxUncompactSize(
+        compactedSet: *const H3Index,
+        numHexes: ::std::os::raw::c_int,
+        res: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn uncompact(
         compactedSet: *const H3Index,
         numHexes: ::std::os::raw::c_int,
