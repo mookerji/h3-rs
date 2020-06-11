@@ -50,7 +50,7 @@ impl H3Index {
 /// Compacts the set set indexes as best as possible, into the array
 /// compactedSet. compactedSet must be at least the size of h3Set in case the
 /// set cannot be compacted.
-pub fn compact(set: Vec<H3Index>) -> Result<Vec<H3Index>> {
+pub fn compact(set: &Vec<H3Index>) -> Result<Vec<H3Index>> {
     let mut buf = Vec::<H3Index>::with_capacity(set.len());
     let ptr = buf.as_mut_ptr();
     unsafe {
@@ -63,13 +63,13 @@ pub fn compact(set: Vec<H3Index>) -> Result<Vec<H3Index>> {
         if err == 0 {
             Ok(Vec::from_raw_parts(ptr, set.len(), set.len()))
         } else {
-            Err(Error::UnableToCompact(set))
+            Err(Error::UnableToCompact(set.clone()))
         }
     }
 }
 
 /// Uncompacts the set compactedSet of indexes to the resolution res
-pub fn uncompact(compacted: Vec<H3Index>, res: GridResolution) -> Result<Vec<H3Index>> {
+pub fn uncompact(compacted: &Vec<H3Index>, res: GridResolution) -> Result<Vec<H3Index>> {
     let max_size = uncompact_size(&compacted, res);
     let mut buf = Vec::<H3Index>::with_capacity(max_size);
     let ptr = buf.as_mut_ptr();
@@ -84,7 +84,7 @@ pub fn uncompact(compacted: Vec<H3Index>, res: GridResolution) -> Result<Vec<H3I
         if err == 0 {
             Ok(Vec::from_raw_parts(ptr, max_size, max_size))
         } else {
-            Err(Error::UnableToCompact(compacted))
+            Err(Error::UnableToCompact(compacted.clone()))
         }
     }
 }
@@ -103,6 +103,8 @@ fn uncompact_size(set: &Vec<H3Index>, res: GridResolution) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::region::*;
+    use geo_types::polygon;
 
     #[test]
     fn test_index_children() {
@@ -111,5 +113,26 @@ mod tests {
         assert_eq!(z7_children.len(), 1);
         let z8_children = index.get_children(GridResolution::Z8);
         assert_eq!(z8_children.len(), 7);
+    }
+
+    #[test]
+    fn test_compact_and_uncompact() {
+        let poly = polygon!(
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478),
+                (x:  -122.5123436999983966, y: 37.7076131999975672),
+                (x:  -122.5247187000021967, y: 37.7835871999971715),
+                (x: -122.4798767000009008, y: 37.8151571999998453),
+            ],
+            interiors: [],
+        );
+        let res = GridResolution::Z9;
+        let indices = poly.polyfill(res);
+        let compact_hexes = compact(&indices).unwrap();
+        assert_eq!(compact_hexes.len(), 209);
+        let uncompact_hexes = uncompact(&compact_hexes, res).unwrap();
+        assert_eq!(uncompact_hexes.len(), 1253);
     }
 }

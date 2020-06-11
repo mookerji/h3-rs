@@ -39,16 +39,16 @@ impl From<H3Index> for LineString<f64> {
 
 pub trait ToH3Region {
     /// Returns H3Index's covering the given region.
-    fn polyfill_h3_index(&self, res: GridResolution) -> Vec<H3Index>;
+    fn polyfill(&self, res: GridResolution) -> Vec<H3Index>;
 
     /// Maximum number of hexagons in the given region.
-    fn get_h3_polyfill_size(&self, res: GridResolution) -> usize;
+    fn polyfill_size(&self, res: GridResolution) -> usize;
 }
 
 impl ToH3Region for Polygon<f64> {
-    fn polyfill_h3_index(&self, res: GridResolution) -> Vec<H3Index> {
+    fn polyfill(&self, res: GridResolution) -> Vec<H3Index> {
         let polygon: GeoPolygon = self.clone().into();
-        let max_indices = self.get_h3_polyfill_size(res);
+        let max_indices = self.polyfill_size(res);
         let mut buf = Vec::<H3Index>::with_capacity(max_indices);
         let ptr = buf.as_mut_ptr();
         unsafe {
@@ -58,7 +58,7 @@ impl ToH3Region for Polygon<f64> {
         }
     }
 
-    fn get_h3_polyfill_size(&self, res: GridResolution) -> usize {
+    fn polyfill_size(&self, res: GridResolution) -> usize {
         let polygon: GeoPolygon = self.clone().into();
         unsafe { h3_sys::maxPolyfillSize(&polygon.0, res as i32) as usize }
     }
@@ -114,9 +114,9 @@ mod tests {
             interiors: [[]],
         ];
         let res = GridResolution::Z9;
-        let indices = poly.polyfill_h3_index(res);
+        let indices = poly.polyfill(res);
         assert!(indices.len() > 1000);
-        let max_indices = poly.get_h3_polyfill_size(res);
+        let max_indices = poly.polyfill_size(res);
         assert_eq!(indices.len(), max_indices);
     }
 
@@ -140,8 +140,8 @@ mod tests {
             ],
         );
         let res = GridResolution::Z9;
-        let indices = poly.polyfill_h3_index(res);
-        let max_indices = poly.get_h3_polyfill_size(res);
+        let indices = poly.polyfill(res);
+        let max_indices = poly.polyfill_size(res);
         assert_eq!(indices.len(), max_indices);
     }
 
@@ -171,9 +171,9 @@ mod tests {
         );
         // TODO: if holes are identical, test crashes?
         let res = GridResolution::Z9;
-        let indices = poly.polyfill_h3_index(res);
+        let indices = poly.polyfill(res);
         assert!(indices.len() > 1000);
-        let max_indices = poly.get_h3_polyfill_size(res);
+        let max_indices = poly.polyfill_size(res);
         assert_eq!(indices.len(), max_indices);
     }
 
@@ -216,9 +216,9 @@ mod tests {
             interiors: [[]],
         );
         let res = GridResolution::Z9;
-        let indices = poly.polyfill_h3_index(res);
+        let indices = poly.polyfill(res);
         assert!(indices.len() > 10);
-        let max_indices = poly.get_h3_polyfill_size(res);
+        let max_indices = poly.polyfill_size(res);
         assert_eq!(indices.len(), max_indices);
     }
 
@@ -235,9 +235,9 @@ mod tests {
             interiors: [[]]
         );
         let res = GridResolution::Z4;
-        let indices = poly.polyfill_h3_index(res);
+        let indices = poly.polyfill(res);
         assert!(indices.len() > 10);
-        let max_indices = poly.get_h3_polyfill_size(res);
+        let max_indices = poly.polyfill_size(res);
         assert_eq!(indices.len(), max_indices);
     }
 
