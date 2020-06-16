@@ -60,6 +60,7 @@ impl ToH3Region for Polygon<f64> {
 
     fn polyfill_size(&self, res: GridResolution) -> usize {
         let polygon: GeoPolygon = self.clone().into();
+        println!("{} {}", &polygon.0.geofence.numVerts, &polygon.0.numHoles);
         unsafe { h3_sys::maxPolyfillSize(&polygon.0, res as i32) as usize }
     }
 }
@@ -111,7 +112,7 @@ mod tests {
                 (x: -122.5247187000021967, y: 37.7835871999971715),
                 (x: -122.4798767000009008, y: 37.8151571999998453),
             ],
-            interiors: [[]],
+            interiors: [],
         ];
         let res = GridResolution::Z9;
         let indices = poly.polyfill(res);
@@ -136,7 +137,7 @@ mod tests {
                     (x: -122.4471197, y: 37.7869802),
                     (x: -122.4590777, y: 37.7664102),
                     (x: -122.4137097, y: 37.7710682)
-                ],
+                ]
             ],
         );
         let res = GridResolution::Z9;
@@ -232,7 +233,7 @@ mod tests {
                 (x: 3.5815429687499996, y: -3.0856655287215378),
                 (x: -3.218994140625, y: -3.0856655287215378)
             ],
-            interiors: [[]]
+            interiors: []
         );
         let res = GridResolution::Z4;
         let indices = poly.polyfill(res);
@@ -241,15 +242,15 @@ mod tests {
         assert_eq!(indices.len(), max_indices);
     }
 
-    #[test]
-    fn test_h3_set_to_multi_polygon_empty() {
-        let multipolygon = ToMultiPolygon(vec![]);
-        assert!(false);
-    }
+    // #[test]
+    // fn test_h3_set_to_multi_polygon_empty() {
+    //     let multipolygon = ToMultiPolygon(vec![]);
+    //     assert!(false);
+    // }
 
-    #[test]
-    fn test_h3_set_to_multi_polygon_single() {
-        let multipolygon = ToMultiPolygon(vec![]);
-        assert!(false);
-    }
+    // #[test]
+    // fn test_h3_set_to_multi_polygon_single() {
+    //     let multipolygon = ToMultiPolygon(vec![]);
+    //     assert!(false);
+    // }
 }

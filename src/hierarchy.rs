@@ -66,9 +66,25 @@ pub trait ToCompactH3Region {
     fn compact(&self) -> Result<Vec<H3Index>>;
 }
 
-pub trait FromCompactH3Region {
-    /// Uncompacts the set of indexes to the resolution
-    fn uncompact(&self, res: GridResolution) -> Result<Vec<H3Index>>;
+/// Uncompacts the set of indexes to the resolution
+fn uncompact(set: &Vec<H3Index>, res: GridResolution) -> Result<Vec<H3Index>> {
+    let max_size = uncompact_size(&set, res);
+    let mut buf = Vec::<H3Index>::with_capacity(max_size);
+    let ptr = buf.as_mut_ptr();
+    unsafe {
+        let err = h3_sys::uncompact(
+            set.as_ptr() as *const h3_sys::H3Index,
+            set.len() as i32,
+            ptr as *mut h3_sys::H3Index,
+            max_size as i32,
+            res as i32,
+        );
+        if err == 0 {
+            Ok(Vec::from_raw_parts(ptr, max_size, max_size))
+        } else {
+            Err(Error::UnableToCompact(set.clone()))
+        }
+    }
 }
 
 impl ToCompactH3Region for Vec<H3Index> {
@@ -95,28 +111,6 @@ impl ToCompactH3Region for Polygon<f64> {
     fn compact(&self) -> Result<Vec<H3Index>> {
         let res = GridResolution::Z9;
         self.polyfill(res).compact()
-    }
-}
-
-impl FromCompactH3Region for Vec<H3Index> {
-    fn uncompact(&self, res: GridResolution) -> Result<Vec<H3Index>> {
-        let max_size = uncompact_size(&self, res);
-        let mut buf = Vec::<H3Index>::with_capacity(max_size);
-        let ptr = buf.as_mut_ptr();
-        unsafe {
-            let err = h3_sys::uncompact(
-                self.as_ptr() as *const h3_sys::H3Index,
-                self.len() as i32,
-                ptr as *mut h3_sys::H3Index,
-                max_size as i32,
-                res as i32,
-            );
-            if err == 0 {
-                Ok(Vec::from_raw_parts(ptr, max_size, max_size))
-            } else {
-                Err(Error::UnableToCompact(self.clone()))
-            }
-        }
     }
 }
 
@@ -150,7 +144,7 @@ mod tests {
         let res = GridResolution::Z9;
         let compact_hexes = poly.polyfill(res).compact().unwrap();
         assert_eq!(compact_hexes.len(), 209);
-        let uncompact_hexes = compact_hexes.uncompact(res).unwrap();
+        let uncompact_hexes = uncompact(&compact_hexes, res).unwrap();
         assert_eq!(uncompact_hexes.len(), 1253);
     }
 }
