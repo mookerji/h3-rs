@@ -1,7 +1,11 @@
+
+> **UNMAINTAINED**: This project is **no longer under development**. Please feel
+> free to browse, fork, reuse these FFI bindings for other projects.
+
 ## `h3-rs`: Rust Bindings to h3
 
 Rust bindings to [H3][h3_uber], a C library for hexagonal, hierarchical
-geospatial indexing. `h3-rs` interoperates between GeoJSON types define the
+geospatial indexing. `h3-rs` interoperates between GeoJSON types defined the
 [`geo-types` crate][geo_types]
 
 This is **experimental, in-progress software**.
@@ -26,18 +30,6 @@ h3-rs = { version = "0.1.0", path = "../h3-rs" }
 
 `h3-rs` requires that you already have `h3` and its headers installed on your
 system. Follow those instructions [from h3][h3_install].
-
-## Usage
-
-### CLI
-
-```
-```
-
-### Library
-
-```
-```
 
 ## License
 
