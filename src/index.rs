@@ -1,5 +1,5 @@
-// Copyright 2016-2019 Uber Technologies, Inc.
-// Copyright 2019      Bhaskar Mookerji
+// Copyright 2016-2020 Uber Technologies, Inc.
+// Copyright 2020      Bhaskar Mookerji
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ impl H3Index {
     }
 
     /// Return centroid of the given H3Index.
-    pub fn get_centroid(&self) -> Point<f64> {
+    pub fn centroid(&self) -> Point<f64> {
         let mut c = h3_sys::GeoCoord::default();
         unsafe {
             h3_sys::h3ToGeo(self.0, &mut c);
@@ -142,7 +142,7 @@ mod tests {
     fn test_h3_to_geo() {
         let index = H3Index::new(0x85283473fffffff).unwrap();
         assert_eq!(
-            index.get_resolution().expect("GridResolution failed!"),
+            index.resolution().expect("GridResolution failed!"),
             GridResolution::Z5
         );
         assert_approx_point(

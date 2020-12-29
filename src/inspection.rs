@@ -1,5 +1,5 @@
-// Copyright 2016-2019 Uber Technologies, Inc.
-// Copyright 2019      Bhaskar Mookerji
+// Copyright 2016-2020 Uber Technologies, Inc.
+// Copyright 2020      Bhaskar Mookerji
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,24 +44,24 @@ impl H3Index {
     }
 
     /// Returns the base cell number of the index.
-    pub fn get_base_cell(&self) -> i32 {
+    pub fn base_cell(&self) -> i32 {
         unsafe { h3_sys::h3GetBaseCell(self.0) }
     }
 
     /// Returns the resolution of the given H3Index
-    pub fn get_resolution(&self) -> Option<GridResolution> {
+    pub fn resolution(&self) -> Option<GridResolution> {
         unsafe { GridResolution::from_i32(h3_sys::h3GetResolution(self.0)) }
     }
 
     /// Returns the maximum number of icosahedron faces the given H3 index may
     /// intersect.
-    fn get_max_face_count(&self) -> usize {
+    fn max_face_count(&self) -> usize {
         unsafe { h3_sys::maxFaceCount(self.0) as usize }
     }
 
     /// Return vector of all icosahedron faces intersected by a given H3
-    pub fn get_icosahedron_faces(&self) -> Vec<i32> {
-        let num_faces = self.get_max_face_count();
+    pub fn icosahedron_faces(&self) -> Vec<i32> {
+        let num_faces = self.max_face_count();
         let mut buf = Vec::<i32>::with_capacity(num_faces);
         let ptr = buf.as_mut_ptr();
         unsafe {
@@ -126,18 +126,14 @@ mod tests {
     }
 
     #[test]
-    fn test_h3_get_resolution() {
+    fn test_h3_resolution() {
         for i in 0..MAX_GRID_RESOLUTION + 1 {
             let res = GridResolution::from_i32(i).expect("GridResolution failed!");
             let index = Point::new(-122.0553238, 37.3615593)
                 .to_h3_index(res)
                 .unwrap();
             // Got the expected H3 resolution back!
-            assert_eq!(
-                index.get_resolution().expect("Point.to_h3_index failed"),
-                res
-            );
+            assert_eq!(index.resolution().expect("Point.to_h3_index failed"), res);
         }
     }
-
 }

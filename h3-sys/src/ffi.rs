@@ -102,6 +102,29 @@ extern "C" {
     pub fn maxKringSize(k: ::std::os::raw::c_int) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn hexRange(
+        origin: H3Index,
+        k: ::std::os::raw::c_int,
+        out: *mut H3Index,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn hexRangeDistances(
+        origin: H3Index,
+        k: ::std::os::raw::c_int,
+        out: *mut H3Index,
+        distances: *mut ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn hexRanges(
+        h3Set: *mut H3Index,
+        length: ::std::os::raw::c_int,
+        k: ::std::os::raw::c_int,
+        out: *mut H3Index,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn kRing(origin: H3Index, k: ::std::os::raw::c_int, out: *mut H3Index);
 }
 extern "C" {
@@ -127,6 +150,16 @@ extern "C" {
 }
 extern "C" {
     pub fn polyfill(geoPolygon: *const GeoPolygon, res: ::std::os::raw::c_int, out: *mut H3Index);
+}
+extern "C" {
+    pub fn h3SetToLinkedGeo(
+        h3Set: *const H3Index,
+        numHexes: ::std::os::raw::c_int,
+        out: *mut LinkedGeoPolygon,
+    );
+}
+extern "C" {
+    pub fn destroyLinkedPolygon(polygon: *mut LinkedGeoPolygon);
 }
 extern "C" {
     pub fn degsToRads(degrees: f64) -> f64;
@@ -187,6 +220,13 @@ extern "C" {
     ) -> ::std::os::raw::c_int;
 }
 extern "C" {
+    pub fn maxUncompactSize(
+        compactedSet: *const H3Index,
+        numHexes: ::std::os::raw::c_int,
+        res: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn uncompact(
         compactedSet: *const H3Index,
         numHexes: ::std::os::raw::c_int,
@@ -233,6 +273,9 @@ extern "C" {
 }
 extern "C" {
     pub fn h3Distance(origin: H3Index, h3: H3Index) -> ::std::os::raw::c_int;
+}
+extern "C" {
+    pub fn h3LineSize(start: H3Index, end: H3Index) -> ::std::os::raw::c_int;
 }
 extern "C" {
     pub fn h3Line(start: H3Index, end: H3Index, out: *mut H3Index) -> ::std::os::raw::c_int;

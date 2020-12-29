@@ -1,5 +1,5 @@
-// Copyright 2016-2019 Uber Technologies, Inc.
-// Copyright 2019      Bhaskar Mookerji
+// Copyright 2016-2020 Uber Technologies, Inc.
+// Copyright 2020      Bhaskar Mookerji
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -119,7 +119,10 @@ impl From<Polygon<f64>> for GeoPolygon {
     fn from(p: Polygon<f64>) -> GeoPolygon {
         let (exterior, interiors) = p.into_inner();
         let geofence: GeoFence = exterior.into();
-        let num_holes = interiors.len() as i32;
+        // Explicitly count the number of interior LineStrings that are
+        // non-empty. Creating polygon! with interiors=[[]] would otherwise
+        // return num_holes=1, causing a downstream segfault.
+        let num_holes: i32 = interiors.iter().map(|j| (j.num_coords() > 0) as i32).sum();
         let mut holes: Vec<GeoFence> = interiors
             .into_iter()
             .map(|g| -> GeoFence { g.into() })
@@ -147,15 +150,67 @@ impl From<GeoMultiPolygon> for MultiPolygon<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use geo_types::polygon;
 
     /// Sanity check around round tripping points between h3-rs FFI and Rust
     /// geotypes.
     #[test]
-    fn test_round_trip() {
+    fn test_round_trip_point() {
         let orig = Point::new(-122.0553238, 37.3615593);
         let c: GeoCoord = orig.into();
         let new: Point<f64> = c.into();
         assert_relative_eq!(orig.lat(), new.lat());
         assert_relative_eq!(orig.lng(), new.lng());
+    }
+
+    #[test]
+    fn test_round_trip_polygon() {
+        // Check both interiors=[[]] and interiors=[]
+        let poly = polygon![
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478)
+            ],
+            interiors: []
+        ];
+        let polygon: GeoPolygon = poly.into();
+        assert_eq!(polygon.0.numHoles, 0);
+        assert_eq!(polygon.0.geofence.numVerts, 4);
+        let poly = polygon![
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478)
+            ],
+            interiors: [[]]
+        ];
+        let polygon: GeoPolygon = poly.into();
+        assert_eq!(polygon.0.numHoles, 0);
+        assert_eq!(polygon.0.geofence.numVerts, 4);
+    }
+
+    #[test]
+    fn test_round_trip_polygon_with_hole() {
+        let poly = polygon!(
+            exterior: [
+                (x: -122.4089866999972145, y: 37.813318999983238),
+                (x: -122.3805436999997056, y: 37.7866302000007224),
+                (x: -122.3544736999993603, y: 37.7198061999978478),
+                (x: -122.5123436999983966, y: 37.7076131999975672),
+                (x: -122.5247187000021967, y: 37.7835871999971715),
+                (x: -122.4798767000009008, y: 37.8151571999998453),
+            ],
+            interiors: [
+                [
+                    (x: -122.4471197, y: 37.7869802),
+                    (x: -122.4590777, y: 37.7664102),
+                    (x: -122.4137097, y: 37.7710682)
+                ],
+            ],
+        );
+        let polygon: GeoPolygon = poly.into();
+        assert_eq!(polygon.0.numHoles, 1);
+        assert_eq!(polygon.0.geofence.numVerts, 7);
     }
 }

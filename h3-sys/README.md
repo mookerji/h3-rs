@@ -15,4 +15,4 @@ $ make gen
 
 ## License
 
-Copyright 2016 - 2019 Uber Technologies under Apache License 2.0
+Copyright 2016 - 2020 Uber Technologies under Apache License 2.0
